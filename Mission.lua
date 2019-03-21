@@ -1,11 +1,7 @@
 env.info("Starting dynamic load 2")
 
-CAS_TaskInfo = {}
-
 function SpawnCASZone(difficulty,mission,attackSet,taskName)
-    local TaskInfo = {}
-    
-    local spawnGroup = SPAWN:New("CAS Target "..difficulty)
+    SPAWN:New("CAS Target "..difficulty)
         :InitRandomizeTemplatePrefixes("Spawn CAS "..difficulty)
         :InitLimit(999,1)
         :OnSpawnGroup(
@@ -14,32 +10,16 @@ function SpawnCASZone(difficulty,mission,attackSet,taskName)
                 
                 group:HandleEvent(EVENTS.Dead)
                 function group:OnEventDead(EventData)
-                    env.info("unit killed")
-                    local unitGroup = GROUP:Find(EventData.IniDCSGroup)
                     local unitName = EventData.IniUnitName
-                    local groupHealth = unitGroup:GetSize() / unitGroup:GetInitialSize()
-                    MESSAGE:New("CAS target ("..unitName..") killed, group health: "..unitGroup:GetSize().."/"..unitGroup:GetInitialSize(),10,"Debug"):ToBlue()
+                    env.info("CAS unit killed: "..unitName)
+                    --local unitGroup = GROUP:Find(EventData.IniDCSGroup)
+                    --local groupHealth = unitGroup:GetSize() / unitGroup:GetInitialSize()
+                    --MESSAGE:New("CAS target ("..unitName..") killed, group health: "..unitGroup:GetSize().."/"..unitGroup:GetInitialSize(),10,"Debug"):ToBlue()
                 end
             end,
             difficulty
         )
-        :SpawnScheduled(60,0)
-
-    TaskInfo.group = spawnGroup
-
-    --TaskInfo.task = TASK_A2G_CAS:New(
-    --    mission,
-    --    attackSet,
-    --    "CAS "..difficulty.." ("..taskName..")",
-    --    SET_UNIT:New():FilterPrefixes("CAS Target "..difficulty):FilterStart(),
-    --    "Engage "..difficulty.." CAS targets (AA Threat: "..taskName..")"
-    --)
-    
-    TaskInfo.jtac = SPAWN:New("JTAC "..difficulty)
-        :InitLimit(1,999)
-        :Spawn()
-    
-    CAS_TaskInfo[difficulty] = TaskInfo
+        :SpawnScheduled(10,0)
 end
 
 -- CAP
@@ -70,20 +50,14 @@ function SpawnCAP(difficulty)
                 local coord = CapGroup:GetCoordinate()
                 CapGroup:SetTask(CapGroup:TaskOrbitCircle(alt,speed,coord))
                 Spawn_CAP_Avail = false
-                SCHEDULER:New(nil, ResetCASDelay, {}, 20)
-                
-                --if previousGroup
-                --    if previousGroup:GetName() == CapGroup:GetName() then
-                --        CommandCenter:MessageToCoalition("Group not spawned, previous group still active")
-                --    end
-                --end
+                SCHEDULER:New(nil, ResetCASDelay, {}, 120)
+            else
+                MESSAGE:New("Group could not be spawned.",1,"Debug"):ToBlue()
             end
         end, {CapGroup}, 2)
-        
-        
-        
+
     else
-        env.info("CAP Spawn delayed")
+        MESSAGE:New("CAP spawn delay not expired, please wait...",1,"Debug"):ToBlue()
     end
 end
 function ResetCASDelay()
@@ -92,30 +66,33 @@ function ResetCASDelay()
 end
 Spawn_CAP["Easy"] = SPAWN:New("CAP Target Easy")
     :InitRandomizeTemplatePrefixes("Spawn CAP Easy")
-    :InitLimit(2,999)
+    :InitLimit(10,9999)
     :InitRepeatOnLanding()
 Spawn_CAP["Medium"] = SPAWN:New("CAP Target Medium")
     :InitRandomizeTemplatePrefixes("Spawn CAP Medium")
-    :InitLimit(2,999)
+    :InitLimit(6,9999)
     :InitRepeatOnLanding()
 Spawn_CAP["Hard"] = SPAWN:New("CAP Target Hard")
     :InitRandomizeTemplatePrefixes("Spawn CAP Hard")
-    :InitLimit(2,999)
+    :InitLimit(3,9999)
     :InitRepeatOnLanding()
-
+    
 -- SAMs
-local SpawnCountSamZones = 5
+local CountSamZones = 14
+local SpawnCountSamZones = 5 -- do not set lower than CountSamZones
 local ZoneTable_SAM = {}
-for sam_i=1,5,1 do
-  table.insert(ZoneTable_SAM, ZONE:New("Zone SAM "..sam_i))
+for i=1,CountSamZones do
+  table.insert(ZoneTable_SAM, ZONE:New("Zone SAM "..i))
 end
 Spawn_SAM_Target = SPAWN:New( "SAM Target" )
     :InitRandomizeTemplatePrefixes( "Spawn SAM" )
-    :InitRandomizeZones(ZoneTable_SAM)
-    :InitLimit(9999, SpawnCountSamZones)
-
-for i=1,SpawnCountSamZones,1 do
-  Spawn_SAM_Target:Spawn()
+math.random()
+math.random()
+math.random()
+for i=1,SpawnCountSamZones do
+    local sam_i = math.random(#ZoneTable_SAM)
+    local zone = table.remove(ZoneTable_SAM,sam_i)
+    Spawn_SAM_Target:SpawnInZone(zone,true)
 end
 
 -- Settings
@@ -130,7 +107,7 @@ CommandCenter:MessageToCoalition("Operation Kickoff underway. Request tasking us
 Mission_Watchtower = MISSION
     :New(CommandCenter, "Watchtower", "Primary", "Defend the valley from hostile invasion.", coalition.side.BLUE)
 
-Mission_Watchtower:Start()
+--Mission_Watchtower:Start()
 
 Mission_Overlord = MISSION
     :New(CommandCenter, "Overlord", "Primary", "Conduct offensive strikes.", coalition.side.BLUE)
@@ -161,12 +138,66 @@ MENU_COALITION_COMMAND:New( coalition.side.BLUE, "Destroy VIP target", MenuDebug
     end
 )
 
+--A2ADispatcher = AI_A2A_GCICAP:New( { "EWR" }, { "Spawn CAP" }, { "Zone CAP Detection","Zone Enemy CAP" }, 4)
+
 Spawn_CAP_Border = SPAWN:New("CAP Border")
     :InitRandomizeTemplatePrefixes( "Spawn CAP" )
     :InitRepeatOnLanding()
     :InitLimit(2,999)
     :SpawnScheduled(600,0)
     :SpawnScheduleStart()
+--
+--ZoneCAPDetect = ZONE:New("Zone CAP Detection")
+--PatrolCapDetect = AI_PATROL_ZONE:New( ZoneCAPDetect, 3000, 9000, 400, 600 )
+--PatrolCapDetect:ManageFuel( 0.2, 60 )
+--
+--ZoneTable_CAP_Detect_Spawn = {
+--    ZONE:New("Zone Spawn CAP Detect 1"),
+--    ZONE:New("Zone Spawn CAP Detect 2"),
+--    ZONE:New("Zone Spawn CAP Detect 3")
+--}
+--Spawn_CAP_Detect = SPAWN:New("CAP Detect Target")
+--    :InitRandomizeTemplatePrefixes( "Spawn CAP" )
+--    :InitRepeatOnLanding()
+--    :InitRandomizeZones(ZoneTable_CAP_Detect_Spawn)
+--    :OnSpawnGroup(
+--        function(group)
+--            env.info("CAP Detection group spawned")
+--            PatrolCapDetect:SetControllable(group)
+--            PatrolCapDetect:__Start(1)
+--        end
+--    )
+----function SpawnCAPDetect()
+--    Spawn_CAP_Detect:Spawn()
+--end
+--MenuDebugSpawnCAPDetect = MENU_COALITION_COMMAND:New( coalition.side.BLUE, "CAP Detect", MenuDebug, SpawnCAPDetect )
+--DetectCAPLag = 0
+--function ScheduledDetectCAP()
+--    ClientsInDetectZone = 0
+--    SET_CLIENT:New()
+--        :FilterCoalitions("blue")
+--        :FilterStart()
+--        :ForEachClientInZone(ZoneCAPDetect,
+--            function(client)
+--                ClientsInDetectZone = ClientsInDetectZone + 1
+--            end
+--        )
+--    env.info("CAP Detect - Clients: "..ClientsInDetectZone)
+--    local CountEnemy = SET_GROUP:New():FilterPrefixes("CAP Detect Target"):FilterActive(true):FilterStart():Count()
+--    env.info("CAP Detect - CountEnemy: "..CountEnemy)
+--    local CountToSpawn = math.max(0,((math.ceil(ClientsInDetectZone/2)) - CountEnemy - DetectCAPLag))
+--    env.info("CAP Detect - CountToSpawn: "..CountToSpawn)
+--
+--    for i=1,CountToSpawn do
+--        SpawnCAPDetect()
+--        DetectCAPLag = DetectCAPLag + 1
+--        SCHEDULER:New(nil, function()
+--            env.info("Reducing cap lag")
+--            DetectCAPLag = DetectCAPLag - 1
+--        end, {}, 20)
+--    end
+--end
+--SCHEDULER:New(nil, ScheduledDetectCAP, {}, 5, 5)
 
 -- Support
 Texaco_Spawn = SPAWN:New("Texaco")
@@ -187,8 +218,11 @@ AWACS_Spawn = SPAWN:New("USA AWACS")
     :SpawnScheduled(60,0)
     :SpawnScheduleStart()
 
+JTACAutoLase(SPAWN:New("JTAC Easy"):InitLimit(1,999):Spawn():GetName(), 1688)
+JTACAutoLase(SPAWN:New("JTAC Medium"):InitLimit(1,999):Spawn():GetName(), 1687)
+
 -- Tasking
-CASAttackSet = SET_GROUP:New()
+BlueAttackSet = SET_GROUP:New()
     :FilterCoalitions("blue")
     :FilterStart()
 
@@ -198,13 +232,19 @@ JTACSet = SET_GROUP:New()
 
 env.info("Creating tasks")
 
-SpawnCASZone("Easy",Mission_Watchtower,CASAttackSet,"None")
-SpawnCASZone("Medium",Mission_Watchtower,CASAttackSet,"AAA")
-SpawnCASZone("Hard",Mission_Watchtower,CASAttackSet,"AAA/SA-9")
+-- Tasks
+--CAPTargetSet = SET_UNIT:New():FilterCoalitions("red"):FilterCategories("plane"):FilterStart()
+--Task_CAP = TASK_A2A_SWEEP:New(Mission_Watchtower, BlueAttackSet, "Combat Air Patrol", CAPTargetSet, "Maintain air superiority in the valley.")
 
---JtacDetection = DETECTION_AREAS:New( JTACSet, 20000 )
---
---CASDispatcher = TASK_A2G_DISPATCHER:New(Mission_Watchtower, CASAttackSet, JtacDetection)
+function MonitorCAPTask()
+    local playerCount = Task_CAP:GetPlayerCount()
+    MESSAGE:New("Players assigned to CAP: "..playerCount,5,"Debug"):ToBlue()
+end
+--Task_CAP_Scheduler = SCHEDULER:New(nil, MonitorCAPTask, {}, 5, 5)
+
+SpawnCASZone("Easy",Mission_Watchtower,BlueAttackSet,"None")
+SpawnCASZone("Medium",Mission_Watchtower,BlueAttackSet,"AAA")
+SpawnCASZone("Hard",Mission_Watchtower,BlueAttackSet,"AAA/SA-9")
 
 -- VIP Aircraft ===================================================================================
 local vipSpawns = {
@@ -225,9 +265,8 @@ SPAWN:New(vipSpawns[randomVip])
 function MonitorVIPStatus()
     if SET_UNIT:New():FilterPrefixes("VIP Target"):FilterStart():GetFirst():GetLife() < 10 then
         MESSAGE:New("Vip transport confirmed to be neutralized, well done.",10,"Debug"):ToBlue()
-    else
-        timer.scheduleFunction(checkVIPStatus, {}, timer.getTime() + 60)
+        VIPScheduler:Stop()
     end
 end
 
-MonitorVIPStatus()
+VIPScheduler = SCHEDULER:New(nil, MonitorVIPStatus, {}, 60, 60)
