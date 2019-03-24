@@ -1,3 +1,15 @@
+
+-- Settings
+_SETTINGS:SetA2G_LL_DMS()
+_SETTINGS:SetImperial()
+_SETTINGS:SetPlayerMenuOn()
+
+---- Command Center
+HQ = GROUP:FindByName("HQ")
+CommandCenter = COMMANDCENTER:New( HQ, "Command" )
+CommandCenter:MessageToCoalition("Operation Kickoff underway. View available tasks in the mission briefing.")
+
+
 --MenuDebug = MENU_COALITION:New( coalition.side.BLUE, "Debug Menu" )
 function DestroyGroups(pre)
   local set = SET_GROUP:New():FilterPrefixes(pre):FilterStart()
@@ -22,17 +34,19 @@ env.info("Kickoff: init start")
 -- CAS Targets
 env.info("Kickoff: CAS init start")
 
+CAS_Groups = {}
 function SpawnCASZone(diff)
     env.info("(Re)Spawning CAS Target ("..diff..")")
     local CasGroup = SPAWN:New("CAS Target "..diff)
         :InitRandomizeTemplatePrefixes("Spawn CAS "..diff)
         :SpawnInZone(ZONE:New("Zone CAS "..diff), true)
+
+    CAS_Groups[CasGroup:GetName()] = diff
     
     CasGroup:HandleEvent(EVENTS.Dead)
     function CasGroup:OnEventDead(EventData)
         local unitGroup = EventData.IniGroup
-        local dcsUnit = EventData.IniDCSUnit
-        local diff = string.gsub(GetOriginalSpawnName(unitGroup),"CAS Target ","")
+        local diff = unitGroup[CasGroup:GetName()]
         if CAS_Respawning[diff] == true then
             env.info("Group respawning, skipping health check ("..diff..") - spawn busy")
         else
@@ -71,6 +85,15 @@ end
 --        end
 --    end
 --)
+local CasSpawnCountBase = 6
+local ZoneSetCasBase = SET_ZONE:New():FilterPrefixes("Zone CAS Base"):FilterStart()
+Spawn_CAS_Base = SPAWN:New( "CAS Target Base" )
+    :InitRandomizeTemplatePrefixes( "Spawn CAS" )
+for i=1,CasSpawnCountBase do
+    local zone = ZoneSetCasBase:GetRandom()
+    ZoneSetCasBase:RemoveZonesByName(zone:GetName())
+    Spawn_CAS_Base:SpawnInZone(zone,true)
+end
 env.info("Kickoff: CAS init done")
 
 -- CAP
@@ -96,9 +119,9 @@ function CAPOnSpawnGroup(CapGroup,SetZones)
     if CapGroup ~= nil then
         local patrolZone = SetZones:GetRandom()
         env.info("CAP group spawned: "..CapGroup:GetName().." - Zone: "..patrolZone:GetName())
-        local patrolObj = AI_CAP_ZONE:New(patrolZone,3000,9000,400,600)
+        local patrolObj = AI_CAP_ZONE:New(patrolZone,3000,9000,700,1200)
         patrolObj:SetControllable(CapGroup)
-        patrolObj:SetEngageRange(138900) -- 75 nm
+        patrolObj:SetEngageRange(92600) -- 50 nm
         patrolObj:SetRefreshTimeInterval(120)
         patrolObj:ManageDamage(0.5)
         patrolObj:ManageFuel(0.2, 0)
@@ -121,31 +144,33 @@ end
 
 Spawn_CAP["Easy"] = SPAWN:New("CAP Target Easy")
     :InitRandomizeTemplatePrefixes("Spawn CAP Easy")
-    :InitRepeatOnEngineShutDown()
     :InitCleanUp(120)
     :OnSpawnGroup(CAPOnSpawnGroup,CAPPatrolZonesBorder)
 Spawn_CAP["Medium"] = SPAWN:New("CAP Target Medium")
     :InitRandomizeTemplatePrefixes("Spawn CAP Medium")
-    :InitRepeatOnEngineShutDown()
     :InitCleanUp(120)
     :OnSpawnGroup(CAPOnSpawnGroup,CAPPatrolZonesBorder)
 Spawn_CAP["Hard"] = SPAWN:New("CAP Target Hard")
     :InitRandomizeTemplatePrefixes("Spawn CAP Hard")
-    :InitRepeatOnEngineShutDown()
     :InitCleanUp(120)
     :OnSpawnGroup(CAPOnSpawnGroup,CAPPatrolZonesBorder)
 
+SetClientsActive = SET_CLIENT:New()
+    :FilterCoalitions("blue")
+    :FilterCategories("plane")
+    :FilterActive()
+    :FilterStart()
+SetEnemyAir = SET_GROUP:New()
+    :FilterPrefixes("CAP Target")
+    :FilterActive(true):
+    FilterStart()
 CAPTestOffset = 0
 function ScheduledDetectCAP()
-    ClientsActive = SET_CLIENT:New()
-        :FilterCoalitions("blue")
-        :FilterCategories("plane")
-        :FilterActive()
-        :FilterStart()
-        :Count() + 5 + CAPTestOffset
+
+    local ClientsActive = SetClientsActive:Count() + 5 + CAPTestOffset
     
     env.info("CAP Detect - Clients: "..ClientsActive)
-    local CountEnemy = SET_GROUP:New():FilterPrefixes("CAP Target"):FilterActive(true):FilterStart():Count()
+    local CountEnemy = SetEnemyAir:Count()
     env.info("CAP Detect - CountEnemy: "..CountEnemy)
     local CountToSpawn = ClientsActive - CountEnemy
     env.info("CAP Detect - CountToSpawn: "..CountToSpawn)
@@ -177,30 +202,64 @@ env.info("Kickoff: CAP init done")
 
 -- SAMs
 env.info("Kickoff: SAM init start")
-local CountSamZones = 14
-local SpawnCountSamZones = 5 -- do not set lower than CountSamZones
-local ZoneTable_SAM = {}
-for i=1,CountSamZones do
-  table.insert(ZoneTable_SAM, ZONE:New("Zone SAM "..i))
+-- Base SAMs
+local SamSpawnCountBase = 5
+local ZoneSetBase = SET_ZONE:New():FilterPrefixes("Zone SAM Base"):FilterStart()
+Spawn_SAM_Base = SPAWN:New( "SAM Target Base" )
+    :InitRandomizeTemplatePrefixes( "Spawn SAM Hard" )
+for i=1,SamSpawnCountBase do
+    local zone = ZoneSetBase:GetRandom()
+    ZoneSetBase:RemoveZonesByName(zone:GetName())
+    Spawn_SAM_Base:SpawnInZone(zone,true)
 end
-Spawn_SAM_Target = SPAWN:New( "SAM Target" )
-    :InitRandomizeTemplatePrefixes( "Spawn SAM" )
-
-for i=1,SpawnCountSamZones do
-    local sam_i = math.random(#ZoneTable_SAM)
-    local zone = table.remove(ZoneTable_SAM,sam_i)
-    Spawn_SAM_Target:SpawnInZone(zone,true)
+-- Border SAMs
+local SamSpawnCountBorder = 10
+local ZoneSetBase = SET_ZONE:New():FilterPrefixes("Zone SAM Border"):FilterStart()
+Spawn_SAM_Border = SPAWN:New( "SAM Target Border" )
+    :InitRandomizeTemplatePrefixes( "Spawn SAM Border" )
+for i=1,SamSpawnCountBorder do
+    local zone = ZoneSetBase:GetRandom()
+    ZoneSetBase:RemoveZonesByName(zone:GetName())
+    Spawn_SAM_Border:SpawnInZone(zone)
 end
 env.info("Kickoff: SAM init done")
 
 env.info("Kickoff: BAI Defense init start")
 
-Spawn_Allies = {}
+Ally_Groups = {}
+Ally_Zones = {}
+function SpawnBAIAllies(index)
+    env.info("(Re)Spawning BAI Allies ("..index..")")
+    env.info("Zone: "..Ally_Zones[index]:GetName())
+    local AllyGroup = SPAWN:New("Ally Defense "..index)
+        :InitRandomizeTemplatePrefixes("Spawn Ally Defense")
+        :SpawnInZone(Ally_Zones[index],true)
 
+    env.info("Group: "..AllyGroup:GetName())
+    
+    Ally_Groups[AllyGroup:GetName()] = index
+    
+    AllyGroup:HandleEvent(EVENTS.Dead)
+    function AllyGroup:OnEventDead(EventData)
+        local unitGroup = EventData.IniGroup
+        local index = Ally_Groups[unitGroup:GetName()]
+        if BAIAllies_Respawning[index] == false then
+            if unitGroup:GetSize() <= 1 then
+                env.info("Group respawning: Ally Defense "..index)
+                BAIAllies_Respawning[index] = true
+                SCHEDULER:New(nil,DestroyGroups,{"Ally Defense "..index},20)
+                SCHEDULER:New(nil,SpawnBAIAllies,{index},180)
+            end
+        end
+    end
+    BAIAllies_Respawning[index] = false
+end
+
+BAIAllies_Respawning = {}
 for i=1,4 do
-    table.insert(Spawn_Allies, SPAWN:New("Ally Defense "..i)
-        :InitRandomizeTemplatePrefixes( "Spawn Ally Defense" )
-        :SpawnInZone(ZONE:New("Zone Defense "..i)))
+    Ally_Zones[i] = ZONE:New("Zone Defense "..i)
+    BAIAllies_Respawning[i] = false
+    SpawnBAIAllies(i)
 end
 
 function BAIWaitForEngage(BaiGroup,AiBaiZone,PatrolZone,EngageZone)
@@ -208,7 +267,14 @@ function BAIWaitForEngage(BaiGroup,AiBaiZone,PatrolZone,EngageZone)
         env.info("BAI in engage zone")
         local bullsStr = BaiGroup:GetCoordinate():ToStringBULLS(coalition.side.BLUE)
         CommandCenter:MessageToCoalition("Friendly ground assets being engaged by hostile air at "..bullsStr.." - Defend our allies!")
-        AiBaiZone:__Accomplish(600)
+        --AiBaiZone:__Accomplish(600)
+        
+        SCHEDULER:New(nil,function(AiBaiZone)
+            env.info("BAI RTB")
+            CommandCenter:MessageToCoalition("Hostile ground attack bugging out")
+            AiBaiZone:__RTB(1)
+        end,{AiBaiZone},600)
+        
     else
         --env.info("BAI not in engage zone")
         SCHEDULER:New(nil,BAIWaitForEngage,{BaiGroup,AiBaiZone,PatrolZone,EngageZone},10)
@@ -241,15 +307,9 @@ function BAIOnSpawnGroup(BaiGroup)
     env.info("BAI target: "..targetIndex)
     local PatrolZone = ZONE:New("BAI Patrol Zone "..targetIndex)
     local EngageZone = ZONE:New("Zone Defense "..targetIndex)
-    local AiBaiZone = AI_BAI_ZONE:New(PatrolZone,8000,10000,500,600,EngageZone)
+    local AiBaiZone = AI_BAI_ZONE:New(PatrolZone,8000,10000,700,1200,EngageZone)
     AiBaiZone:SetControllable(BaiGroup)
-    
-    function AiBaiZone:OnAfterAccomplish(Controllable,From,Event,To)
-        env.info("BAI RTB")
-        CommandCenter:MessageToCoalition("Hostile ground attack bugging out")
-        AiBaiZone:__RTB(1)
-    end
-    
+        
     SCHEDULER:New(nil,BAIWaitForTakeoff,{BaiGroup,AiBaiZone,PatrolZone,EngageZone}, 10)
 end
 BAIAirbases = {
@@ -262,6 +322,7 @@ Spawn_BAI = SPAWN:New("BAI Target")
     :InitCleanUp(120)
     :InitLimit(6,0)
     :OnSpawnGroup(BAIOnSpawnGroup)
+    
 function SpawnBAI()
     local base = BAIAirbases[math.random(#BAIAirbases)]
     Spawn_BAI:SpawnAtAirbase(base)
@@ -273,15 +334,6 @@ SCHEDULER:New(nil,SpawnBAI,{},600,1800,0.5)
 --end)
 
 env.info("Kickoff: BAI Defense init done")
-
--- Settings
-_SETTINGS:SetPlayerMenuOn()
-_SETTINGS:SetA2G_LL_DMS()
-
----- Command Center
-HQ = GROUP:FindByName("HQ")
-CommandCenter = COMMANDCENTER:New( HQ, "Command" )
-CommandCenter:MessageToCoalition("Operation Kickoff underway. View available tasks in the mission briefing.")
 
 -- Support
 env.info("Kickoff: Support init start")
@@ -298,6 +350,12 @@ Arco_Spawn = SPAWN:New("Arco")
     :SpawnScheduleStart()
     
 AWACS_Spawn = SPAWN:New("USA AWACS")
+    :InitRepeatOnLanding()
+    :InitLimit(1,0)
+    :SpawnScheduled(60,0)
+    :SpawnScheduleStart()
+
+Red_AWACS_Spawn = SPAWN:New("Red AWACS")
     :InitRepeatOnLanding()
     :InitLimit(1,0)
     :SpawnScheduled(60,0)
