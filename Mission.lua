@@ -98,7 +98,7 @@ function CAPOnSpawnGroup(CapGroup,SetZones)
         env.info("CAP group spawned: "..CapGroup:GetName().." - Zone: "..patrolZone:GetName())
         local patrolObj = AI_CAP_ZONE:New(patrolZone,3000,9000,400,600)
         patrolObj:SetControllable(CapGroup)
-        patrolObj:SetEngageRange(92600)
+        patrolObj:SetEngageRange(138900) -- 75 nm
         patrolObj:SetRefreshTimeInterval(120)
         patrolObj:ManageDamage(0.5)
         patrolObj:ManageFuel(0.2, 0)
@@ -352,4 +352,13 @@ VIPScheduler = SCHEDULER:New(nil, MonitorVIPStatus, {}, 60, 60)
 --    end
 --)
 env.info("Kickoff: VIP init done")
+
+GROUP:FindByName("Ship Practice"):PatrolRoute()
+
+SCHEDULER:New(nil, function()
+    MESSAGE:New("Mission restarting in 30 minutes",30,"Restart"):ToBlue()
+end, {}, 13200)
+SCHEDULER:New(nil, function()
+    MESSAGE:New("Mission restarting in 5 minutes",30,"Restart"):ToBlue()
+end, {}, 14700)
 env.info("Kickoff: init done")
