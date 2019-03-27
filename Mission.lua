@@ -167,7 +167,7 @@ SetEnemyAir = SET_GROUP:New()
 CAPTestOffset = 0
 function ScheduledDetectCAP()
 
-    local ClientsActive = SetClientsActive:Count() + 5 + CAPTestOffset
+    local ClientsActive = SetClientsActive:Count() + 3 + CAPTestOffset
     
     env.info("CAP Detect - Clients: "..ClientsActive)
     local CountEnemy = SetEnemyAir:Count()
