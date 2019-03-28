@@ -327,7 +327,7 @@ function SpawnBAI()
     local base = BAIAirbases[math.random(#BAIAirbases)]
     Spawn_BAI:SpawnAtAirbase(base)
 end
-SCHEDULER:New(nil,SpawnBAI,{},600,1800,0.5)
+SCHEDULER:New(nil,SpawnBAI,{},2400,2400,0.3)
 
 --MENU_COALITION_COMMAND:New( coalition.side.BLUE, "Spawn BAI", MenuDebug,function()
 --    SpawnBAI()
