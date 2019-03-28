@@ -7,6 +7,10 @@ AirbossStennis:SetICLS(5, "STN")
 AirbossStennis:SetMarshalRadio(305)
 AirbossStennis:SetLSORadio(125)
 AirbossStennis:SetSoundfilesFolder("Airboss Soundfiles/")
+AirbossStennis:SetVoiceOversLSOByRaynor("Airboss Soundfiles/")
+AirbossStennis:SetVoiceOversMarshalByRaynor("Airboss Soundfiles/")
+AirbossStennis:SetRadioRelayLSO("Stennis LSO Relay")
+AirbossStennis:SetRadioRelayMarshal("Stennis Marshal Relay")
 --AirbossStennis:SetMenuSingleCarrier()
 
 -- Load all saved player grades from your "Saved Games\DCS" folder (if lfs was desanitized).
@@ -44,7 +48,7 @@ local function StopRecovery()
   AirbossStennis:RecoveryStop()
 end
 
-local menucarriercontrol=MENU_COALITION:New(AirbossStennis:GetCoalition(), "Airboss")
+local menucarriercontrol=MENU_COALITION:New(AirbossStennis:GetCoalition(), "Airboss Recovery")
 MENU_COALITION_COMMAND:New(AirbossStennis:GetCoalition(), "Start CASE I",   menucarriercontrol, StartRecovery, 1)
 MENU_COALITION_COMMAND:New(AirbossStennis:GetCoalition(), "Start CASE II",  menucarriercontrol, StartRecovery, 2)
 MENU_COALITION_COMMAND:New(AirbossStennis:GetCoalition(), "Start CASE III", menucarriercontrol, StartRecovery, 3)
