@@ -7,7 +7,7 @@ AirbossStennis:SetICLS(5, "STN")
 AirbossStennis:SetMarshalRadio(305)
 AirbossStennis:SetLSORadio(125)
 AirbossStennis:SetSoundfilesFolder("Airboss Soundfiles/")
-AirbossStennis:SetMenuSingleCarrier()
+--AirbossStennis:SetMenuSingleCarrier()
 
 -- Load all saved player grades from your "Saved Games\DCS" folder (if lfs was desanitized).
 AirbossStennis:Load()
