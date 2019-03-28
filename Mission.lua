@@ -411,7 +411,7 @@ VIPScheduler = SCHEDULER:New(nil, MonitorVIPStatus, {}, 60, 60)
 --)
 env.info("Kickoff: VIP init done")
 
-GROUP:FindByName("Ship Practice"):PatrolRoute()
+--GROUP:FindByName("Ship Practice"):PatrolRoute()
 
 SCHEDULER:New(nil, function()
     MESSAGE:New("Mission restarting in 30 minutes",60,"Restart"):ToBlue()

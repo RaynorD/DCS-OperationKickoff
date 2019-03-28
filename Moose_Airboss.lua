@@ -61,5 +61,5 @@ tankerStennis:SetRadio(230)
 tankerStennis:Start()
 
 -- Set carrier strike groups to patrol waypoints indefinitely. Once the last waypoint is reached, group will go back to first waypoint.
-local StennisGroup=GROUP:FindByName("USS Stennis")
-StennisGroup:PatrolRoute()
+--local StennisGroup=GROUP:FindByName("USS Stennis")
+--StennisGroup:PatrolRoute()
