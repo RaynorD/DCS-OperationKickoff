@@ -213,7 +213,7 @@ for i=1,SamSpawnCountBase do
     Spawn_SAM_Base:SpawnInZone(zone,true)
 end
 -- Border SAMs
-local SamSpawnCountBorder = 17
+local SamSpawnCountBorder = 23
 local ZoneSetBase = SET_ZONE:New():FilterPrefixes("Zone SAM Border"):FilterStart()
 Spawn_SAM_Border = SPAWN:New( "SAM Target Border" )
     :InitRandomizeTemplatePrefixes( "Spawn SAM Border" )
