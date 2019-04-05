@@ -271,7 +271,7 @@ function BAIWaitForEngage(BaiGroup,AiBaiZone,PatrolZone,EngageZone)
         
         SCHEDULER:New(nil,function(AiBaiZone)
             env.info("BAI RTB")
-            --CommandCenter:MessageToCoalition("Hostile ground attack bugging out")
+            CommandCenter:MessageToCoalition("Hostile ground attack bugging out")
             AiBaiZone:__RTB(1)
         end,{AiBaiZone},600)
         
@@ -337,19 +337,19 @@ env.info("Kickoff: BAI Defense init done")
 
 -- Support
 env.info("Kickoff: Support init start")
-Texaco_Spawn = SPAWN:New("Texaco 41Y 231Mhz")
+Texaco_Spawn = SPAWN:New("Texaco")
     :InitRepeatOnLanding()
     :InitLimit(1,0)
     :SpawnScheduled(60,0)
     :SpawnScheduleStart()
     
-Arco_Spawn = SPAWN:New("Arco 42Y 232Mhz")
+Arco_Spawn = SPAWN:New("Arco")
     :InitRepeatOnLanding()
     :InitLimit(1,0)
     :SpawnScheduled(60,0)
     :SpawnScheduleStart()
     
-AWACS_Spawn = SPAWN:New("AWACS 254Mhz")
+AWACS_Spawn = SPAWN:New("USA AWACS")
     :InitRepeatOnLanding()
     :InitLimit(1,0)
     :SpawnScheduled(60,0)
